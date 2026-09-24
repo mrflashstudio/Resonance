@@ -91,6 +91,16 @@ Caddy obtains and renews public TLS certificates automatically. You do not need 
 
 Both configurations apply database migrations before starting Resonance and keep database and certificate data in Docker volumes. Back up the database before upgrading.
 
+## Account registration
+
+There are no built-in accounts or registration front-end yet. Create an account through the API:
+
+```sh
+curl.exe --ssl-revoke-best-effort https://production.resonance.local/api/registerAccount -H "Content-Type: application/json" --data "{\"username\":\"ResonanceUser\",\"password\":\"SecurePassword123\"}"
+```
+
+Replace `resonance.local` with your `RESONANCE_DOMAIN` and choose your own credentials. Successful registration returns HTTP `201`.
+
 ## Connecting
 
 Follow the [Retune setup instructions](https://github.com/mrflashstudio/Retune#using-retune), using your `RESONANCE_DOMAIN` as the server domain (`resonance.local` for the default local setup).
