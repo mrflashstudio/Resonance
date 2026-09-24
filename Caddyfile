@@ -1,0 +1,4 @@
+{$RESONANCE_DOMAIN}, production.{$RESONANCE_DOMAIN}, www.{$RESONANCE_DOMAIN}, socket.{$RESONANCE_DOMAIN}, socketdev.{$RESONANCE_DOMAIN} {
+    {$RESONANCE_TLS}
+    reverse_proxy {$RESONANCE_UPSTREAM}
+}

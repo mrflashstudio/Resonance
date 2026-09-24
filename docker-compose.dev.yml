@@ -1,0 +1,81 @@
+name: resonance-dev
+
+services:
+  resonance:
+    build: &build
+      context: .
+      target: development
+    env_file: &envFile
+      - path: .env
+        required: false
+    environment: &environment
+      ASPNETCORE_ENVIRONMENT: Development
+      RESONANCE_DOMAIN: ${RESONANCE_DOMAIN:?Set RESONANCE_DOMAIN in .env}
+      POSTGRES_HOST: database
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:?Set POSTGRES_DB in .env}
+      POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      RESONANCE_PORT: ${RESONANCE_PORT:-3333}
+      DOTNET_USE_POLLING_FILE_WATCHER: "true"
+      DOTNET_WATCH_SUPPRESS_BROWSER_REFRESH: "true"
+    ports:
+      - "127.0.0.1:${RESONANCE_PORT:-3333}:${RESONANCE_PORT:-3333}"
+    volumes: &source
+      - ./Resonance:/src/Resonance
+      - build-bin:/src/Resonance/bin
+      - build-obj:/src/Resonance/obj
+      - nuget:/root/.nuget/packages
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  migrate:
+    build: *build
+    env_file: *envFile
+    environment: *environment
+    volumes: *source
+    command: ["dotnet", "run", "--no-launch-profile", "--", "--migrate"]
+    depends_on:
+      database:
+        condition: service_healthy
+
+  database:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?Set POSTGRES_DB in .env}
+      POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - database-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  caddy:
+    image: caddy:2-alpine
+    environment:
+      RESONANCE_DOMAIN: ${RESONANCE_DOMAIN:?Set RESONANCE_DOMAIN in .env}
+      RESONANCE_UPSTREAM: resonance:${RESONANCE_PORT:-3333}
+      RESONANCE_TLS: "tls internal"
+    ports:
+      - "127.0.0.1:80:80"
+      - "127.0.0.1:443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - resonance
+
+volumes:
+  database-data:
+  build-bin:
+  build-obj:
+  nuget:
+  caddy-data:
+  caddy-config:

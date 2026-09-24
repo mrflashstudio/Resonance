@@ -1,0 +1,17 @@
+bin/
+obj/
+.vs/
+.idea/
+*.user
+*.suo
+*.rsuser
+
+.env
+.env.*
+!.env.example
+
+*.crt
+*.key
+*.pem
+*.pfx
+*.p12

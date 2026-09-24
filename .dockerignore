@@ -1,0 +1,15 @@
+**/bin
+**/obj
+.git
+**/.idea
+**/.vs
+**/*.user
+**/*.suo
+**/*.rsuser
+**/.env
+**/.env.*
+**/*.crt
+**/*.key
+**/*.pem
+**/*.pfx
+**/*.p12

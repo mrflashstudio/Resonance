@@ -1,0 +1,71 @@
+name: resonance
+
+services:
+  resonance:
+    build: &build
+      context: .
+      target: production
+    restart: unless-stopped
+    env_file: &envFile
+      - path: .env
+        required: false
+    environment: &environment
+      ASPNETCORE_ENVIRONMENT: Production
+      RESONANCE_DOMAIN: ${RESONANCE_DOMAIN:?Set RESONANCE_DOMAIN in .env}
+      POSTGRES_HOST: database
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:?Set POSTGRES_DB in .env}
+      POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      RESONANCE_PORT: ${RESONANCE_PORT:-3333}
+    expose:
+      - "${RESONANCE_PORT:-3333}"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  migrate:
+    build: *build
+    env_file: *envFile
+    environment: *environment
+    command: ["--migrate"]
+    depends_on:
+      database:
+        condition: service_healthy
+
+  database:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?Set POSTGRES_DB in .env}
+      POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - database-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      RESONANCE_DOMAIN: ${RESONANCE_DOMAIN:?Set RESONANCE_DOMAIN in .env}
+      RESONANCE_UPSTREAM: resonance:${RESONANCE_PORT:-3333}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - resonance
+
+volumes:
+  database-data:
+  caddy-data:
+  caddy-config:
