@@ -48,6 +48,7 @@ builder.Services.AddCors(options => options.AddDefaultPolicy(policy =>
         .WithMethods("GET", "POST").WithHeaders("Content-Type").AllowCredentials();
 }));
 builder.Services.AddSingleton<IAuthenticationService, AuthenticationService>();
+builder.Services.AddSingleton<IProfileService, ProfileService>();
 builder.Services.AddHostedService<SessionCleanupService>();
 builder.Services.AddSingleton<IOnlinePlayers, OnlinePlayers>();
 builder.Services.AddSingleton<UserActivityService>();

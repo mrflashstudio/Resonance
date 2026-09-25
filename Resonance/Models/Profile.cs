@@ -1,6 +1,7 @@
+using System.Text.Json.Serialization;
 using MessagePack;
 
-namespace Resonance.Sockets.Models;
+namespace Resonance.Models;
 
 [MessagePackObject]
 public sealed record Profile
@@ -15,15 +16,19 @@ public sealed record Profile
     public required string Username { get; init; }
 
     [Key(3)]
+    [JsonPropertyName("avatar_url")]
     public string? AvatarUrl { get; init; }
 
     [Key(4)]
+    [JsonPropertyName("profile_image")]
     public string? ProfileImage { get; init; }
 
     [Key(5)]
+    [JsonPropertyName("about_me")]
     public string? AboutMe { get; init; }
 
     [Key(6)]
+    [JsonPropertyName("created_at")]
     public double? CreatedAt { get; init; }
 
     [Key(7)]
@@ -33,18 +38,23 @@ public sealed record Profile
     public int? Position { get; init; }
 
     [Key(9)]
+    [JsonPropertyName("skill_points")]
     public double? SkillPoints { get; init; }
 
     [Key(10)]
+    [JsonPropertyName("play_count")]
     public int? PlayCount { get; init; }
 
     [Key(11)]
+    [JsonPropertyName("squares_hit")]
     public int? SquaresHit { get; init; }
 
     [Key(12)]
+    [JsonPropertyName("total_score")]
     public long? TotalScore { get; init; }
 
     [Key(13)]
+    [JsonPropertyName("is_online")]
     public bool? IsOnline { get; init; }
 
     [Key(14)]

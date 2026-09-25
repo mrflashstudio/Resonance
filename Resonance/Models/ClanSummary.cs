@@ -1,6 +1,6 @@
 using MessagePack;
 
-namespace Resonance.Sockets.Models;
+namespace Resonance.Models;
 
 [MessagePackObject]
 public sealed record ClanSummary(
