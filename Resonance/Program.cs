@@ -1,3 +1,4 @@
+using Carter;
 using DotNetEnv;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -40,7 +41,7 @@ builder.Services.AddOptions<ServerOptions>()
         "Server:Domain must be a domain without a scheme, port, or trailing dot.")
     .ValidateOnStart();
 
-builder.Services.AddControllers();
+builder.Services.AddCarter();
 builder.Services.AddCors(options => options.AddDefaultPolicy(policy =>
 {
     var domain = builder.Configuration["Server:Domain"];
@@ -71,6 +72,6 @@ if (args.Contains("--migrate", StringComparer.Ordinal))
 app.UseWebSockets();
 app.UseRouting();
 app.UseCors();
-app.MapControllers();
+app.MapCarter();
 
 await app.RunAsync();
