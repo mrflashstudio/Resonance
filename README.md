@@ -9,15 +9,16 @@ Resonance is a work-in-progress private server implementation for [Rhythia](http
 ## Feature roadmap
 
 - [x] Authentication (login, logout, registration and persistent sessions)
+- [x] Account privileges and badges
 - [x] Online-player list and join/leave notifications
 - [ ] Beatmap collections, search, details, and downloads
 - [ ] Skin browsing and downloads
-- [ ] Player profiles
+- [x] Player profiles (basic profile reads)
 - [ ] Score submission
 - [ ] Leaderboards, player statistics, and RP calculation
 - [ ] Replay downloads
 - [ ] Friends
-- [ ] Chat
+- [x] Chat (channels, direct messages and commands)
 - [ ] Clans
 - [ ] Spectating
 - [ ] Multiplayer lobbies and matches
@@ -93,13 +94,29 @@ Both configurations apply database migrations before starting Resonance and keep
 
 ## Account registration
 
-There are no built-in accounts or registration front-end yet. Create an account through the API:
+There is no registration front-end yet. Register through the API:
 
 ```sh
 curl.exe --ssl-revoke-best-effort https://production.resonance.local/api/registerAccount -H "Content-Type: application/json" --data "{\"username\":\"ResonanceUser\",\"password\":\"SecurePassword123\"}"
 ```
 
 Replace `resonance.local` with your `RESONANCE_DOMAIN` and choose your own credentials. Successful registration returns HTTP `201`.
+
+## Privileges
+
+After registration, connect to the server and send `/claimsuperuser <code>` in chat, using the single-use code from the server logs. The code is available while no superuser exists and changes on restart. The command and reply are visible only to you.
+
+With superuser access or Developer privileges, use `/giveprivilege` to grant privileges to yourself or another user by username or account ID:
+
+```text
+/giveprivilege ResonanceUser Developer
+/giveprivilege "Another User" Moderator
+/giveprivilege 3 Supporter
+```
+
+Available privileges are `Developer`, `Moderator`, `TeamAssistant`, `TeamRanked`, and `Supporter`. Use `/takeprivilege` to remove them. Superuser access remains independent of these privileges.
+
+Use `/help` for other available commands and `/help <command>` for usage and examples.
 
 ## Connecting
 
