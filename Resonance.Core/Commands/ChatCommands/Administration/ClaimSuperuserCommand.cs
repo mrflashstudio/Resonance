@@ -3,9 +3,11 @@ using System.Security.Cryptography;
 using System.Text;
 using Resonance.Core.Repositories;
 
-namespace Resonance.Core.Commands;
+namespace Resonance.Core.Commands.ChatCommands.Administration;
 
-[ChatCommand("claimsuperuser", Usage = "/claimsuperuser <code>")]
+[ChatCommand("claimsuperuser", Usage = "/claimsuperuser <code>",
+    Description = "Claim full access using the single-use code from the server logs, while no superuser exists",
+    Example = "/claimsuperuser your-code")]
 public sealed class ClaimSuperuserCommand(IUserRepository users, TimeProvider clock) : IBotCommand, IDisposable
 {
     private readonly SemaphoreSlim _claims = new(1, 1);

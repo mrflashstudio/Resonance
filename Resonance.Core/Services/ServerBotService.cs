@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Resonance.Core.Commands;
+using Resonance.Core.Commands.ChatCommands.Administration;
 using Resonance.Core.Extensions;
 using Resonance.Core.Models;
 using Resonance.Core.Repositories;

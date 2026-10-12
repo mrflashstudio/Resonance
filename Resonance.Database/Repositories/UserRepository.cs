@@ -19,6 +19,29 @@ public sealed class UserRepository(IDbContextFactory<ResonanceDbContext> databas
             .Select(UserMapping.AccountProjection).SingleOrDefaultAsync(cancellationToken);
     }
 
+    public async Task<Account?> GetByUsernameAsync(string username, CancellationToken cancellationToken)
+    {
+        await using var db = await database.CreateDbContextAsync(cancellationToken);
+        return await db.Users.AsNoTracking().Where(user => user.Username == username)
+            .Select(UserMapping.AccountProjection).SingleOrDefaultAsync(cancellationToken);
+    }
+
+    public async Task<bool> ChangePrivilegesAsync(int id, UserPrivileges privileges, bool grant, CancellationToken cancellationToken)
+    {
+        await using var db = await database.CreateDbContextAsync(cancellationToken);
+        return await db.Users.Where(user => user.Id == id).ExecuteUpdateAsync(setters => setters
+            .SetProperty(user => user.Privileges, user => grant ? user.Privileges | privileges : user.Privileges & ~privileges),
+            cancellationToken) != 0;
+    }
+
+    public async Task<bool> ChangeBadgesAsync(int id, UserBadges badges, bool grant, CancellationToken cancellationToken)
+    {
+        await using var db = await database.CreateDbContextAsync(cancellationToken);
+        return await db.Users.Where(user => user.Id == id).ExecuteUpdateAsync(setters => setters
+            .SetProperty(user => user.Badges, user => grant ? user.Badges | badges : user.Badges & ~badges),
+            cancellationToken) != 0;
+    }
+
     public async Task<UserCredentials?> FindByUsernameAsync(string username, CancellationToken cancellationToken)
     {
         await using var db = await database.CreateDbContextAsync(cancellationToken);
