@@ -66,4 +66,24 @@ public sealed class UserRepository(IDbContextFactory<ResonanceDbContext> databas
         await db.Users.Where(user => user.Id == id && (user.LastOnlineAt == null || user.LastOnlineAt < observedAt))
             .ExecuteUpdateAsync(setters => setters.SetProperty(user => user.LastOnlineAt, observedAt), cancellationToken);
     }
+
+    public async Task<Account?> InitializeServerBotAsync(string name, DateTimeOffset createdAt, CancellationToken cancellationToken)
+    {
+        await using var db = await database.CreateDbContextAsync(cancellationToken);
+        var user = await db.Users.OrderBy(user => user.Id).FirstOrDefaultAsync(cancellationToken);
+        if (user is not null && !user.IsBot)
+            return null;
+
+        if (user is null)
+        {
+            user = new User { Username = name, CreatedAt = createdAt, IsBot = true };
+            db.Users.Add(user);
+        }
+
+        user.Username = name;
+        user.CountryCode = "AQ";
+        user.PasswordHash = string.Empty;
+        await db.SaveChangesAsync(cancellationToken);
+        return UserMapping.ToAccount(user);
+    }
 }

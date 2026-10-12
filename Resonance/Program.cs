@@ -4,6 +4,7 @@ using Carter;
 using DotNetEnv;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Resonance.Configuration;
 using Resonance.Core.Authentication;
 using Resonance.Core.Configuration;
@@ -31,6 +32,12 @@ builder.Services.AddSingleton<IPasswordHasher<Account>, PasswordHasher<Account>>
 builder.Services.AddSingleton<IUserRepository, UserRepository>();
 builder.Services.AddSingleton<ISessionRepository, SessionRepository>();
 builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddOptions<ServerBotSettings>()
+    .BindConfiguration("ServerBot")
+    .Validate(options => !string.IsNullOrWhiteSpace(options.Name) && options.Name.Length is >= 3 and <= 32 &&
+        options.Name == options.Name.Trim() && !options.Name.Any(char.IsControl),
+        "ServerBot:Name must be between 3 and 32 characters without control characters or leading/trailing whitespace.")
+    .ValidateOnStart();
 builder.Services.AddOptions<GameConnectionSettings>()
     .BindConfiguration("GameConnection")
     .Validate(options => options.InactivityTimeout > TimeSpan.Zero && options.InactivityTimeout <= TimeSpan.FromHours(1),
@@ -64,7 +71,8 @@ builder.Services.AddSingleton<IProfileService, ProfileService>();
 builder.Services.AddSingleton<ChatService>();
 builder.Services.AddSingleton<ChatChannels>();
 builder.Services.AddHostedService<SessionCleanupService>();
-builder.Services.AddSingleton<IOnlinePlayers, OnlinePlayers>();
+builder.Services.AddSingleton<OnlinePlayers>();
+builder.Services.AddSingleton<IOnlinePlayers>(services => services.GetRequiredService<OnlinePlayers>());
 builder.Services.AddSingleton<IPresence>(services => services.GetRequiredService<IOnlinePlayers>());
 builder.Services.AddSingleton<UserActivityService>();
 builder.Services.AddSingleton<IGameConnectionService, GameConnectionService>();
@@ -84,6 +92,20 @@ if (args.Contains("--migrate", StringComparer.Ordinal))
         .CreateDbContextAsync();
     await db.Database.MigrateAsync();
     return;
+}
+
+app.Services.GetRequiredService<IStartupValidator>().Validate();
+var botSettings = app.Services.GetRequiredService<IOptions<ServerBotSettings>>().Value;
+var bot = await app.Services.GetRequiredService<IUserRepository>().InitializeServerBotAsync(
+    botSettings.Name, app.Services.GetRequiredService<TimeProvider>().GetUtcNow(), app.Lifetime.ApplicationStopping);
+if (bot is null)
+{
+    app.Logger.LogWarning("Server bot was not created: the first account is already a human account");
+}
+else
+{
+    app.Services.GetRequiredService<OnlinePlayers>().SetServerBot(bot);
+    app.Logger.LogInformation("Server bot {Name} is online (account {AccountId})", bot.Name, bot.Id);
 }
 
 app.UseWebSockets();

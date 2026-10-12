@@ -14,6 +14,22 @@ public sealed class OnlinePlayers(TimeProvider clock, ChatChannels chat) : IOnli
     private readonly Lock _sync = new();
     private readonly Dictionary<int, Player> _players = [];
     private readonly HashSet<GameConnection> _connections = [];
+    private Account? _serverBot;
+
+    public void SetServerBot(Account account)
+    {
+        if (!account.IsBot)
+            throw new ArgumentException("Server bot must be a bot account.", nameof(account));
+
+        lock (_sync)
+        {
+            if (_serverBot is not null || _players.ContainsKey(account.Id))
+                throw new InvalidOperationException("Server bot is already registered or its account is connected.");
+
+            _serverBot = account;
+            Broadcast(PacketType.PlayerJoined, CreateDetails(account));
+        }
+    }
 
     private OnlinePlayer CreateDetails(Account account)
     {
@@ -39,14 +55,14 @@ public sealed class OnlinePlayers(TimeProvider clock, ChatChannels chat) : IOnli
         get
         {
             lock (_sync)
-                return _players.Count;
+                return _players.Count + (_serverBot is null ? 0 : 1);
         }
     }
 
     public bool IsOnline(int userId)
     {
         lock (_sync)
-            return _players.ContainsKey(userId);
+            return _serverBot?.Id == userId || _players.ContainsKey(userId);
     }
 
     public void Register(GameConnection connection)
@@ -60,7 +76,8 @@ public sealed class OnlinePlayers(TimeProvider clock, ChatChannels chat) : IOnli
         lock (_sync)
         {
             if (!_connections.Contains(connection) || connection.Stopped.IsCancellationRequested ||
-                cancellationToken.IsCancellationRequested || account.Id != connection.AccountId)
+                cancellationToken.IsCancellationRequested || account.Id != connection.AccountId ||
+                account.IsBot || _serverBot?.Id == account.Id)
                 return false;
 
             if (_players.TryGetValue(account.Id, out var existing))
@@ -105,7 +122,10 @@ public sealed class OnlinePlayers(TimeProvider clock, ChatChannels chat) : IOnli
                 player.Connection != connection)
                 return;
 
-            var snapshot = _players.Values.Select(entry => CreateDetails(entry.Account)).OrderBy(entry => entry.Id).ToArray();
+            var accounts = _players.Values.Select(entry => entry.Account);
+            if (_serverBot is not null)
+                accounts = accounts.Append(_serverBot);
+            var snapshot = accounts.Select(CreateDetails).OrderBy(entry => entry.Id).ToArray();
             connection.Send(GamePacket.Create(PacketType.OnlinePlayers, MessagePackSerializer.Serialize(snapshot)));
         }
     }

@@ -108,9 +108,9 @@ public sealed class AuthenticationService(
         var credentials = await users.FindByUsernameAsync(login, cancellationToken);
         var account = credentials?.Account;
         var result = passwords.VerifyHashedPassword(account ?? MissingAccount,
-            credentials?.PasswordHash ?? _missingPasswordHash, proof);
+            account is { IsBot: false } ? credentials!.PasswordHash : _missingPasswordHash, proof);
 
-        if (account is null || result == PasswordVerificationResult.Failed)
+        if (account is null || account.IsBot || result == PasswordVerificationResult.Failed)
             return LoginResult.Failure("Invalid login or password.");
 
         if (account.Status.GetEffectiveStatus(account.StatusExpiresAt, clock.GetUtcNow()) == UserStatus.Excluded)
@@ -129,7 +129,10 @@ public sealed class AuthenticationService(
 
             var current = await users.GetAsync(account.Id, cancellationToken);
 
-            if (current is null || current.Status.GetEffectiveStatus(current.StatusExpiresAt, clock.GetUtcNow()) == UserStatus.Excluded)
+            if (current is null || current.IsBot)
+                return LoginResult.Failure("Invalid login or password.");
+
+            if (current.Status.GetEffectiveStatus(current.StatusExpiresAt, clock.GetUtcNow()) == UserStatus.Excluded)
                 return LoginResult.Failure("This account is excluded.");
 
             var now = clock.GetUtcNow();
