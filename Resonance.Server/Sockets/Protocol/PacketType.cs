@@ -6,6 +6,11 @@ public enum PacketType : byte
     OnlinePlayers = 2,
     PlayerJoined = 3,
     PlayerLeft = 4,
+    ChannelAvailable = 5,
+    ChannelJoined = 6,
+    JoinChannel = 7,
+    ChannelLeft = 8,
+    ChatMessage = 9,
     Ping = 10,
     Pong = 12
 }

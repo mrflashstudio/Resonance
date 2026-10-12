@@ -7,7 +7,7 @@ using Resonance.Server.Sockets.Protocol;
 
 namespace Resonance.Server.Services;
 
-public sealed class OnlinePlayers(TimeProvider clock) : IOnlinePlayers
+public sealed class OnlinePlayers(TimeProvider clock, ChatChannels chat) : IOnlinePlayers
 {
     private sealed record Player(Account Account, GameConnection Connection);
 
@@ -67,11 +67,13 @@ public sealed class OnlinePlayers(TimeProvider clock) : IOnlinePlayers
                 _players[account.Id] = new Player(account, connection);
                 if (existing.Connection != connection)
                     existing.Connection.Stop();
+                chat.Connect(connection);
                 return true;
             }
 
             var details = CreateDetails(account);
             _players.Add(account.Id, new Player(account, connection));
+            chat.Connect(connection);
             Broadcast(PacketType.PlayerJoined, details, connection);
             return true;
         }
@@ -82,6 +84,7 @@ public sealed class OnlinePlayers(TimeProvider clock) : IOnlinePlayers
         lock (_sync)
         {
             _connections.Remove(connection);
+            chat.Disconnect(connection);
 
             if (!_players.TryGetValue(connection.AccountId, out var player) ||
                 player.Connection != connection)

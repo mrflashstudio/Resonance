@@ -23,7 +23,6 @@ public sealed class AuthenticationService(
     private readonly string _missingPasswordHash = passwords.HashPassword(MissingAccount, SessionToken.Create());
     private readonly SessionCache _cache = new();
     private readonly SemaphoreSlim _sessionOperations = new(1, 1);
-    // Guarded by _sessionOperations. Failed deletes remain denied until a retry succeeds.
     private readonly HashSet<(string Hash, SessionClient Client)> _pendingRevocations = [];
     private readonly HashSet<int> _pendingUserRevocations = [];
 
@@ -61,7 +60,6 @@ public sealed class AuthenticationService(
             }
             catch
             {
-                // Persistence may have committed. Reload it before making another renewal decision.
                 Invalidate(session.Id);
                 throw;
             }
@@ -306,7 +304,6 @@ public sealed class AuthenticationService(
 
         try
         {
-            // Retry failed revocations before pruning. Keep denials if any retry still fails.
             var failures = new List<Exception>();
             foreach (var (hash, client) in _pendingRevocations.ToArray())
             {

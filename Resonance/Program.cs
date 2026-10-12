@@ -61,6 +61,8 @@ builder.Services.AddCors(options => options.AddDefaultPolicy(policy =>
 }));
 builder.Services.AddSingleton<IAuthenticationService, AuthenticationService>();
 builder.Services.AddSingleton<IProfileService, ProfileService>();
+builder.Services.AddSingleton<ChatService>();
+builder.Services.AddSingleton<ChatChannels>();
 builder.Services.AddHostedService<SessionCleanupService>();
 builder.Services.AddSingleton<IOnlinePlayers, OnlinePlayers>();
 builder.Services.AddSingleton<IPresence>(services => services.GetRequiredService<IOnlinePlayers>());
@@ -70,6 +72,9 @@ builder.Services.AddSingleton<IPacketDispatcher, PacketDispatcher>();
 builder.Services.AddSingleton<IPacketHandler, ProfileHandler>();
 builder.Services.AddSingleton<IPacketHandler, OnlinePlayersHandler>();
 builder.Services.AddSingleton<IPacketHandler, PingHandler>();
+builder.Services.AddSingleton<IPacketHandler, ChatMessageHandler>();
+builder.Services.AddSingleton<IPacketHandler, JoinChannelHandler>();
+builder.Services.AddSingleton<IPacketHandler, LeaveChannelHandler>();
 
 var app = builder.Build();
 
