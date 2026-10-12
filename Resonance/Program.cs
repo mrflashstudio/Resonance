@@ -1,15 +1,22 @@
+using Resonance.Http;
+using Resonance.Http.Validation;
 using Carter;
 using DotNetEnv;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Resonance.Authentication;
 using Resonance.Configuration;
-using Resonance.Data;
-using Resonance.Data.Entities;
-using Resonance.Routing;
-using Resonance.Services;
-using Resonance.Sockets;
-using Resonance.Sockets.Handlers;
+using Resonance.Core.Authentication;
+using Resonance.Core.Configuration;
+using Resonance.Core.Models;
+using Resonance.Core.Repositories;
+using Resonance.Core.Services;
+using Resonance.Database;
+using Resonance.Database.Repositories;
+using Resonance.Hosting;
+using Resonance.Server.Services;
+using Resonance.Server.Configuration;
+using Resonance.Server.Sockets;
+using Resonance.Server.Sockets.Handlers;
 
 Env.NoClobber().TraversePath().Load();
 
@@ -20,7 +27,9 @@ var connectionString = builder.Configuration.GetConnectionString("Database")
 
 builder.Services.AddDbContextFactory<ResonanceDbContext>(options => options.UseNpgsql(connectionString));
 builder.Services.Configure<PasswordHasherOptions>(options => options.IterationCount = 210_000);
-builder.Services.AddSingleton<IPasswordHasher<User>, PasswordHasher<User>>();
+builder.Services.AddSingleton<IPasswordHasher<Account>, PasswordHasher<Account>>();
+builder.Services.AddSingleton<IUserRepository, UserRepository>();
+builder.Services.AddSingleton<ISessionRepository, SessionRepository>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddOptions<GameConnectionSettings>()
     .BindConfiguration("GameConnection")
@@ -29,8 +38,8 @@ builder.Services.AddOptions<GameConnectionSettings>()
     .ValidateOnStart();
 builder.Services.AddOptions<SessionSettings>()
     .BindConfiguration("Sessions")
-    .Validate(options => options.Lifetime > TimeSpan.Zero && options.Lifetime <= TimeSpan.FromDays(30),
-        "Sessions:Lifetime must be greater than zero and at most 30 days.")
+    .Validate(options => options.Lifetime > SessionSettings.RenewalInterval && options.Lifetime <= TimeSpan.FromDays(30),
+        "Sessions:Lifetime must be greater than one day and at most 30 days.")
     .Validate(options => options.CleanupInterval > TimeSpan.Zero && options.CleanupInterval <= TimeSpan.FromDays(1),
         "Sessions:CleanupInterval must be greater than zero and at most one day.")
     .ValidateOnStart();
@@ -42,6 +51,8 @@ builder.Services.AddOptions<ServerOptions>()
     .ValidateOnStart();
 
 builder.Services.AddCarter();
+builder.Services.AddRequestValidation();
+builder.Services.AddRateLimiting(builder.Configuration);
 builder.Services.AddCors(options => options.AddDefaultPolicy(policy =>
 {
     var domain = builder.Configuration["Server:Domain"];
@@ -52,6 +63,7 @@ builder.Services.AddSingleton<IAuthenticationService, AuthenticationService>();
 builder.Services.AddSingleton<IProfileService, ProfileService>();
 builder.Services.AddHostedService<SessionCleanupService>();
 builder.Services.AddSingleton<IOnlinePlayers, OnlinePlayers>();
+builder.Services.AddSingleton<IPresence>(services => services.GetRequiredService<IOnlinePlayers>());
 builder.Services.AddSingleton<UserActivityService>();
 builder.Services.AddSingleton<IGameConnectionService, GameConnectionService>();
 builder.Services.AddSingleton<IPacketDispatcher, PacketDispatcher>();
@@ -72,6 +84,7 @@ if (args.Contains("--migrate", StringComparer.Ordinal))
 app.UseWebSockets();
 app.UseRouting();
 app.UseCors();
+app.UseRateLimiter();
 app.MapCarter();
 
 await app.RunAsync();

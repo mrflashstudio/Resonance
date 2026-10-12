@@ -10,6 +10,7 @@ services:
         required: false
     environment: &environment
       ASPNETCORE_ENVIRONMENT: Development
+      Logging__LogLevel__Resonance: Debug
       RESONANCE_DOMAIN: ${RESONANCE_DOMAIN:?Set RESONANCE_DOMAIN in .env}
       POSTGRES_HOST: database
       POSTGRES_PORT: 5432
@@ -23,8 +24,17 @@ services:
       - "127.0.0.1:${RESONANCE_PORT:-3333}:${RESONANCE_PORT:-3333}"
     volumes: &source
       - ./Resonance:/src/Resonance
+      - ./Resonance.Core:/src/Resonance.Core
+      - ./Resonance.Database:/src/Resonance.Database
+      - ./Resonance.Server:/src/Resonance.Server
       - build-bin:/src/Resonance/bin
       - build-obj:/src/Resonance/obj
+      - core-bin:/src/Resonance.Core/bin
+      - core-obj:/src/Resonance.Core/obj
+      - database-bin:/src/Resonance.Database/bin
+      - database-obj:/src/Resonance.Database/obj
+      - server-bin:/src/Resonance.Server/bin
+      - server-obj:/src/Resonance.Server/obj
       - nuget:/root/.nuget/packages
     depends_on:
       migrate:
@@ -69,13 +79,17 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy-data:/data
       - caddy-config:/config
-    depends_on:
-      - resonance
 
 volumes:
   database-data:
   build-bin:
   build-obj:
+  core-bin:
+  core-obj:
+  database-bin:
+  database-obj:
+  server-bin:
+  server-obj:
   nuget:
   caddy-data:
   caddy-config:

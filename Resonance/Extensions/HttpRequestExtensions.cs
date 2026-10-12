@@ -1,4 +1,4 @@
-using Resonance.Routing;
+using Resonance.Configuration;
 
 namespace Resonance.Extensions;
 

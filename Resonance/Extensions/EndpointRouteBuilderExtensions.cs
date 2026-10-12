@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Options;
+using Resonance.Configuration;
 using Resonance.Http.Filters;
-using Resonance.Routing;
 
 namespace Resonance.Extensions;
 
