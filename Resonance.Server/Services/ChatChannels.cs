@@ -8,14 +8,27 @@ namespace Resonance.Server.Services;
 
 public sealed class ChatChannels
 {
-    public const string ResonanceChannel = "resonance";
     private readonly Lock _sync = new();
     private readonly Dictionary<int, GameConnection> _connections = [];
-    private readonly HashSet<GameConnection> _members = [];
-
-    private static void SendChannel(GameConnection connection, PacketType type)
+    private readonly Dictionary<string, Channel> _channels = new(StringComparer.Ordinal)
     {
-        connection.Send(GamePacket.Create(type, MessagePackSerializer.Serialize(new ChatChannelPacket(ResonanceChannel))));
+        ["announce"] = new Channel(autoJoin: true, readOnly: true),
+        ["resonance"] = new Channel(autoJoin: true, readOnly: false),
+        ["english"] = new Channel(autoJoin: false, readOnly: false),
+        ["german"] = new Channel(autoJoin: false, readOnly: false),
+        ["russian"] = new Channel(autoJoin: false, readOnly: false)
+    };
+
+    private sealed class Channel(bool autoJoin, bool readOnly)
+    {
+        public bool AutoJoin { get; } = autoJoin;
+        public bool ReadOnly { get; } = readOnly;
+        public HashSet<GameConnection> Members { get; } = [];
+    }
+
+    private static void SendChannel(GameConnection connection, PacketType type, string name)
+    {
+        connection.Send(GamePacket.Create(type, MessagePackSerializer.Serialize(new ChatChannelPacket(name))));
     }
 
     public void Connect(GameConnection connection)
@@ -25,12 +38,19 @@ public sealed class ChatChannels
             if (_connections.GetValueOrDefault(connection.AccountId) == connection)
                 return;
             if (_connections.TryGetValue(connection.AccountId, out var previous))
-                _members.Remove(previous);
+                foreach (var channel in _channels.Values)
+                    channel.Members.Remove(previous);
 
             _connections[connection.AccountId] = connection;
-            _members.Add(connection);
-            SendChannel(connection, PacketType.ChannelAvailable);
-            SendChannel(connection, PacketType.ChannelJoined);
+            foreach (var name in _channels.Keys)
+                SendChannel(connection, PacketType.ChannelAvailable, name);
+            foreach (var (name, channel) in _channels)
+            {
+                if (!channel.AutoJoin)
+                    continue;
+                channel.Members.Add(connection);
+                SendChannel(connection, PacketType.ChannelJoined, name);
+            }
         }
     }
 
@@ -38,7 +58,8 @@ public sealed class ChatChannels
     {
         lock (_sync)
         {
-            _members.Remove(connection);
+            foreach (var channel in _channels.Values)
+                channel.Members.Remove(connection);
             if (_connections.GetValueOrDefault(connection.AccountId) == connection)
                 _connections.Remove(connection.AccountId);
         }
@@ -49,18 +70,19 @@ public sealed class ChatChannels
         lock (_sync)
         {
             if (_connections.GetValueOrDefault(connection.AccountId) != connection ||
-                !string.Equals(channel?.Trim(), ResonanceChannel, StringComparison.Ordinal))
+                connection.Stopped.IsCancellationRequested || channel is null ||
+                !_channels.TryGetValue(channel.Trim(), out var target))
                 return;
 
             if (joined)
             {
-                _members.Add(connection);
-                SendChannel(connection, PacketType.ChannelJoined);
+                target.Members.Add(connection);
+                SendChannel(connection, PacketType.ChannelJoined, channel.Trim());
             }
             else
             {
-                _members.Remove(connection);
-                SendChannel(connection, PacketType.ChannelLeft);
+                target.Members.Remove(connection);
+                SendChannel(connection, PacketType.ChannelLeft, channel.Trim());
             }
         }
     }
@@ -89,10 +111,11 @@ public sealed class ChatChannels
                 return;
             }
 
-            if (message.Channel != ResonanceChannel || !_members.Contains(connection))
+            if (message.Channel is null || !_channels.TryGetValue(message.Channel, out var target) ||
+                target.ReadOnly || !target.Members.Contains(connection))
                 return;
 
-            foreach (var recipient in _members)
+            foreach (var recipient in target.Members)
             {
                 if (recipient != connection && !recipient.Stopped.IsCancellationRequested)
                     recipient.Send(packet);
