@@ -2,6 +2,10 @@ namespace Resonance.Core.Models;
 
 public sealed record Account(int Id, string Name)
 {
+    public UserPrivileges Privileges { get; init; }
+    public UserBadges Badges { get; init; }
+    public bool IsBot { get; init; }
+    public bool IsSuperuser { get; init; }
     public DateTimeOffset CreatedAt { get; init; }
     public DateTimeOffset? LastOnlineAt { get; init; }
     public bool IsOnline { get; init; }

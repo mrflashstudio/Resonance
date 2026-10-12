@@ -27,6 +27,9 @@ public sealed class ChatService(IProfileService profiles, TimeProvider clock)
         if (sender is null || sender.Status.GetEffectiveStatus(sender.StatusExpiresAt, clock.GetUtcNow()) != UserStatus.Active)
             return null;
 
-        return new ChatMessage(sender.Id, sender.Name, recipientId, channel?.Trim(), text);
+        return new ChatMessage(sender.Id, sender.Name, recipientId, channel?.Trim(), text)
+        {
+            Badges = sender.GetBadgeNames()
+        };
     }
 }

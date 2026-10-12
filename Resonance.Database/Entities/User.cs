@@ -6,6 +6,10 @@ namespace Resonance.Database.Entities;
 public sealed class User
 {
     public int Id { get; set; }
+    public UserPrivileges Privileges { get; set; }
+    public UserBadges Badges { get; set; }
+    public bool IsBot { get; set; }
+    public bool IsSuperuser { get; set; }
 
     [MaxLength(32)]
     public required string Username { get; set; }

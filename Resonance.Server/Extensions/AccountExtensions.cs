@@ -1,4 +1,5 @@
 using System.Globalization;
+using Resonance.Core.Extensions;
 using Resonance.Core.Models;
 using Resonance.Server.Models;
 
@@ -24,7 +25,7 @@ public static class AccountExtensions
             IsOnline = account.IsOnline,
             Verified = false,
             Ban = account.Status.ToProtocolString(account.StatusExpiresAt, now),
-            Badges = []
+            Badges = account.GetBadgeNames()
         };
     }
 }

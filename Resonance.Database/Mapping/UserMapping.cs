@@ -8,6 +8,10 @@ internal static class UserMapping
 {
     internal static readonly Expression<Func<User, Account>> AccountProjection = user => new Account(user.Id, user.Username)
     {
+        Privileges = user.Privileges,
+        Badges = user.Badges,
+        IsBot = user.IsBot,
+        IsSuperuser = user.IsSuperuser,
         CreatedAt = user.CreatedAt,
         LastOnlineAt = user.LastOnlineAt,
         AboutMe = user.AboutMe,

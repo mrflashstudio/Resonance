@@ -102,6 +102,7 @@ public sealed class ChatChannels
                 RecipientId = message.RecipientId,
                 Channel = message.Channel,
                 Text = message.Text,
+                Badges = message.Badges.Length == 0 ? null : message.Badges,
             }));
 
             if (message.RecipientId is { } recipientId)

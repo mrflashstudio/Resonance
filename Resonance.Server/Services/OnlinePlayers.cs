@@ -19,7 +19,8 @@ public sealed class OnlinePlayers(TimeProvider clock, ChatChannels chat) : IOnli
     {
         return new OnlinePlayer(account.Id, account.Name,
             Ban: account.Status.ToProtocolString(account.StatusExpiresAt, clock.GetUtcNow()),
-            Position: account.Rank, SkillPoints: account.RhythmPoints, PlayCount: account.PlayCount, Flag: account.CountryCode);
+            Position: account.Rank, SkillPoints: account.RhythmPoints, PlayCount: account.PlayCount,
+            Flag: account.CountryCode, IsBot: account.IsBot);
     }
 
     private void Broadcast(PacketType type, OnlinePlayer player, GameConnection? excluded = null)
