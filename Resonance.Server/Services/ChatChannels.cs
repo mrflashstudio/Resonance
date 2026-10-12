@@ -1,4 +1,5 @@
 using MessagePack;
+using Resonance.Core.Commands;
 using Resonance.Core.Extensions;
 using Resonance.Core.Models;
 using Resonance.Server.Sockets;
@@ -66,6 +67,12 @@ public sealed class ChatChannels
         }
     }
 
+    public bool IsConnected(GameConnection connection)
+    {
+        lock (_sync)
+            return _connections.GetValueOrDefault(connection.AccountId) == connection && !connection.Stopped.IsCancellationRequested;
+    }
+
     public void SetMembership(GameConnection connection, string? channel, bool joined)
     {
         lock (_sync)
@@ -96,15 +103,7 @@ public sealed class ChatChannels
                 connection.Stopped.IsCancellationRequested || message.SenderId != connection.AccountId)
                 return;
 
-            var packet = GamePacket.Create(PacketType.ChatMessage, MessagePackSerializer.Serialize(new ChatMessagePacket
-            {
-                SenderId = message.SenderId,
-                SenderName = message.SenderName,
-                RecipientId = message.RecipientId,
-                Channel = message.Channel,
-                Text = message.Text,
-                Badges = message.Badges.Length == 0 ? null : message.Badges,
-            }));
+            var packet = CreateMessagePacket(message);
 
             if (message.RecipientId is { } recipientId)
             {
@@ -113,16 +112,71 @@ public sealed class ChatChannels
                 return;
             }
 
-            if (message.Channel is null || !_channels.TryGetValue(message.Channel, out var target) ||
-                !target.Members.Contains(connection) ||
-                (target.PostPrivileges is { } privileges && !message.Sender.HasAnyPrivilege(privileges)))
+            if (message.Channel is not { } channel || !CanPostToChannel(connection, message.Sender, channel))
                 return;
 
-            foreach (var recipient in target.Members)
+            foreach (var recipient in _channels[channel].Members)
             {
                 if (recipient != connection && !recipient.Stopped.IsCancellationRequested)
                     recipient.Send(packet);
             }
         }
+    }
+
+    public bool CanPost(GameConnection connection, ChatMessage message)
+    {
+        lock (_sync)
+            return message.SenderId == connection.AccountId && CanPostToChannel(connection, message.Sender, message.Channel);
+    }
+
+    private bool CanPostToChannel(GameConnection connection, Account sender, string? channel) =>
+        _connections.GetValueOrDefault(connection.AccountId) == connection && !connection.Stopped.IsCancellationRequested &&
+        channel is not null && _channels.TryGetValue(channel, out var target) && target.Members.Contains(connection) &&
+        (target.PostPrivileges is not { } privileges || sender.HasAnyPrivilege(privileges));
+
+    public void SendBotReply(GameConnection connection, BotReply reply, ChatMessage request)
+    {
+        lock (_sync)
+        {
+            if (_connections.GetValueOrDefault(connection.AccountId) != connection || connection.Stopped.IsCancellationRequested ||
+                !reply.Message.Sender.IsBot || request.SenderId != connection.AccountId ||
+                (request.Channel is not null && !CanPostToChannel(connection, request.Sender, request.Channel)))
+                return;
+
+            var message = reply.Message;
+            var packet = CreateMessagePacket(message);
+            if (request.Channel is null)
+            {
+                if (message.RecipientId == connection.AccountId && message.Channel is null)
+                    connection.Send(packet);
+                return;
+            }
+
+            if (message.RecipientId is not null || message.Channel != request.Channel)
+                return;
+            if (reply.Visibility == CommandVisibility.SenderOnly)
+                connection.Send(packet);
+            else if (reply.Visibility == CommandVisibility.Channel)
+            {
+                foreach (var recipient in _channels[request.Channel].Members)
+                {
+                    if (!recipient.Stopped.IsCancellationRequested)
+                        recipient.Send(packet);
+                }
+            }
+        }
+    }
+
+    private static byte[] CreateMessagePacket(ChatMessage message)
+    {
+        return GamePacket.Create(PacketType.ChatMessage, MessagePackSerializer.Serialize(new ChatMessagePacket
+        {
+            SenderId = message.SenderId,
+            SenderName = message.SenderName,
+            RecipientId = message.RecipientId,
+            Channel = message.Channel,
+            Text = message.Text,
+            Badges = message.Badges.Length == 0 ? null : message.Badges
+        }));
     }
 }

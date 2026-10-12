@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using System.Data;
 using Npgsql;
+using Resonance.Core.Extensions;
 using Resonance.Core.Models;
 using Resonance.Core.Repositories;
 using Resonance.Database.Entities;
@@ -85,5 +87,35 @@ public sealed class UserRepository(IDbContextFactory<ResonanceDbContext> databas
         user.PasswordHash = string.Empty;
         await db.SaveChangesAsync(cancellationToken);
         return UserMapping.ToAccount(user);
+    }
+
+    public async Task<bool> HasSuperuserAsync(CancellationToken cancellationToken)
+    {
+        await using var db = await database.CreateDbContextAsync(cancellationToken);
+        return await db.Users.AnyAsync(user => user.IsSuperuser, cancellationToken);
+    }
+
+    public async Task<bool> TryClaimSuperuserAsync(int userId, DateTimeOffset now, CancellationToken cancellationToken)
+    {
+        await using var db = await database.CreateDbContextAsync(cancellationToken);
+        await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
+        try
+        {
+            if (await db.Users.AnyAsync(user => user.IsSuperuser, cancellationToken))
+                return false;
+
+            var user = await db.Users.SingleOrDefaultAsync(user => user.Id == userId, cancellationToken);
+            if (user is null || user.IsBot || user.Status.GetEffectiveStatus(user.StatusExpiresAt, now) != UserStatus.Active)
+                return false;
+
+            user.IsSuperuser = true;
+            await db.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+            return true;
+        }
+        catch (Exception exception) when (exception.GetBaseException() is PostgresException { SqlState: PostgresErrorCodes.SerializationFailure })
+        {
+            return false;
+        }
     }
 }

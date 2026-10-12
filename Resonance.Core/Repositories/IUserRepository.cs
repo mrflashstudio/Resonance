@@ -5,6 +5,8 @@ namespace Resonance.Core.Repositories;
 public interface IUserRepository
 {
     Task<Account?> InitializeServerBotAsync(string name, DateTimeOffset createdAt, CancellationToken cancellationToken);
+    Task<bool> HasSuperuserAsync(CancellationToken cancellationToken);
+    Task<bool> TryClaimSuperuserAsync(int userId, DateTimeOffset now, CancellationToken cancellationToken);
     Task<Account?> GetAsync(int id, CancellationToken cancellationToken);
     Task<UserCredentials?> FindByUsernameAsync(string username, CancellationToken cancellationToken);
     Task<RegistrationResult?> CreateAsync(string username, string passwordHash, DateTimeOffset createdAt,

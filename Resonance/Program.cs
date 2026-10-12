@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Resonance.Configuration;
 using Resonance.Core.Authentication;
+using Resonance.Core.Commands;
 using Resonance.Core.Configuration;
 using Resonance.Core.Models;
 using Resonance.Core.Repositories;
@@ -69,6 +70,8 @@ builder.Services.AddCors(options => options.AddDefaultPolicy(policy =>
 builder.Services.AddSingleton<IAuthenticationService, AuthenticationService>();
 builder.Services.AddSingleton<IProfileService, ProfileService>();
 builder.Services.AddSingleton<ChatService>();
+builder.Services.AddSingleton<BotCommandDispatcher>();
+builder.Services.AddSingleton<ServerBotService>();
 builder.Services.AddSingleton<ChatChannels>();
 builder.Services.AddHostedService<SessionCleanupService>();
 builder.Services.AddSingleton<OnlinePlayers>();
@@ -96,17 +99,9 @@ if (args.Contains("--migrate", StringComparer.Ordinal))
 
 app.Services.GetRequiredService<IStartupValidator>().Validate();
 var botSettings = app.Services.GetRequiredService<IOptions<ServerBotSettings>>().Value;
-var bot = await app.Services.GetRequiredService<IUserRepository>().InitializeServerBotAsync(
-    botSettings.Name, app.Services.GetRequiredService<TimeProvider>().GetUtcNow(), app.Lifetime.ApplicationStopping);
-if (bot is null)
-{
-    app.Logger.LogWarning("Server bot was not created: the first account is already a human account");
-}
-else
-{
+var bot = await app.Services.GetRequiredService<ServerBotService>().InitializeAsync(botSettings.Name, app.Lifetime.ApplicationStopping);
+if (bot is not null)
     app.Services.GetRequiredService<OnlinePlayers>().SetServerBot(bot);
-    app.Logger.LogInformation("Server bot {Name} is online (account {AccountId})", bot.Name, bot.Id);
-}
 
 app.UseWebSockets();
 app.UseRouting();
