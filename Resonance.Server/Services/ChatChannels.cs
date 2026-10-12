@@ -1,4 +1,5 @@
 using MessagePack;
+using Resonance.Core.Extensions;
 using Resonance.Core.Models;
 using Resonance.Server.Sockets;
 using Resonance.Server.Sockets.Models;
@@ -12,17 +13,17 @@ public sealed class ChatChannels
     private readonly Dictionary<int, GameConnection> _connections = [];
     private readonly Dictionary<string, Channel> _channels = new(StringComparer.Ordinal)
     {
-        ["announce"] = new Channel(autoJoin: true, readOnly: true),
-        ["resonance"] = new Channel(autoJoin: true, readOnly: false),
-        ["english"] = new Channel(autoJoin: false, readOnly: false),
-        ["german"] = new Channel(autoJoin: false, readOnly: false),
-        ["russian"] = new Channel(autoJoin: false, readOnly: false)
+        ["announce"] = new Channel(autoJoin: true, postPrivileges: UserPrivileges.Moderator),
+        ["resonance"] = new Channel(autoJoin: true),
+        ["english"] = new Channel(autoJoin: false),
+        ["german"] = new Channel(autoJoin: false),
+        ["russian"] = new Channel(autoJoin: false)
     };
 
-    private sealed class Channel(bool autoJoin, bool readOnly)
+    private sealed class Channel(bool autoJoin, UserPrivileges? postPrivileges = null)
     {
         public bool AutoJoin { get; } = autoJoin;
-        public bool ReadOnly { get; } = readOnly;
+        public UserPrivileges? PostPrivileges { get; } = postPrivileges;
         public HashSet<GameConnection> Members { get; } = [];
     }
 
@@ -113,7 +114,8 @@ public sealed class ChatChannels
             }
 
             if (message.Channel is null || !_channels.TryGetValue(message.Channel, out var target) ||
-                target.ReadOnly || !target.Members.Contains(connection))
+                !target.Members.Contains(connection) ||
+                (target.PostPrivileges is { } privileges && !message.Sender.HasAnyPrivilege(privileges)))
                 return;
 
             foreach (var recipient in target.Members)
