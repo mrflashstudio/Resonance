@@ -11,9 +11,11 @@ public sealed class LeaveChannelHandler(ChatChannels channels) : IPacketHandler
     public ValueTask HandleAsync(GameConnection connection, ReadOnlyMemory<byte> payload, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var request = ChatPayload.Read<ChatChannelPacket>(payload);
+        
+        var request = PacketPayload.Read<ChatChannelPacket>(payload);
         if (request is not null)
             channels.SetMembership(connection, request.Name, joined: false);
+        
         return ValueTask.CompletedTask;
     }
 }

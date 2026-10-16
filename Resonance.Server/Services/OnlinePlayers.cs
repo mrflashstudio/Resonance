@@ -9,7 +9,7 @@ namespace Resonance.Server.Services;
 
 public sealed class OnlinePlayers(TimeProvider clock, ChatChannels chat) : IOnlinePlayers
 {
-    private sealed record Player(Account Account, GameConnection Connection);
+    private sealed record Player(Account Account, GameConnection Connection, PlayerActivityPacket? Activity = null);
 
     private readonly Lock _sync = new();
     private readonly Dictionary<int, Player> _players = [];
@@ -43,6 +43,11 @@ public sealed class OnlinePlayers(TimeProvider clock, ChatChannels chat) : IOnli
     {
         var packet = GamePacket.Create(type, MessagePackSerializer.Serialize(player));
 
+        Broadcast(packet, excluded);
+    }
+
+    private void Broadcast(byte[] packet, GameConnection? excluded = null)
+    {
         foreach (var recipient in _players.Values.Select(entry => entry.Connection))
         {
             if (recipient != excluded)
@@ -82,10 +87,19 @@ public sealed class OnlinePlayers(TimeProvider clock, ChatChannels chat) : IOnli
 
             if (_players.TryGetValue(account.Id, out var existing))
             {
-                _players[account.Id] = new Player(account, connection);
+                _players[account.Id] = new Player(account, connection,
+                    existing.Connection == connection ? existing.Activity : null);
+
                 if (existing.Connection != connection)
+                {
                     existing.Connection.Stop();
+
+                    if (existing.Activity is not null)
+                        Broadcast(CreateActivityPacket(new PlayerActivityPacket { UserId = account.Id }));
+                }
+
                 chat.Connect(connection);
+
                 return true;
             }
 
@@ -109,7 +123,12 @@ public sealed class OnlinePlayers(TimeProvider clock, ChatChannels chat) : IOnli
                 return false;
 
             _players.Remove(connection.AccountId);
+
+            if (player.Activity is not null)
+                Broadcast(CreateActivityPacket(new PlayerActivityPacket { UserId = connection.AccountId }));
+
             Broadcast(PacketType.PlayerLeft, CreateDetails(player.Account));
+
             return true;
         }
     }
@@ -127,7 +146,49 @@ public sealed class OnlinePlayers(TimeProvider clock, ChatChannels chat) : IOnli
                 accounts = accounts.Append(_serverBot);
             var snapshot = accounts.Select(CreateDetails).OrderBy(entry => entry.Id).ToArray();
             connection.Send(GamePacket.Create(PacketType.OnlinePlayers, MessagePackSerializer.Serialize(snapshot)));
+
+            foreach (var entry in _players.Values.OrderBy(entry => entry.Account.Id))
+            {
+                if (entry.Activity is not null)
+                    connection.Send(CreateActivityPacket(entry.Activity));
+            }
         }
+    }
+
+    public void UpdateActivity(GameConnection connection, PlayerActivityPacket request)
+    {
+        lock (_sync)
+        {
+            if (connection.Stopped.IsCancellationRequested ||
+                !_players.TryGetValue(connection.AccountId, out var player) || player.Connection != connection)
+                return;
+
+            var update = new PlayerActivityPacket { UserId = connection.AccountId };
+
+            if (request.Activity is { } activity)
+            {
+                update = update with
+                {
+                    Activity = activity,
+                    MapTitle = request.MapTitle,
+                    MapId = request.MapId,
+                    ReplayUserName = request.ReplayUserName
+                };
+            }
+
+            var stored = update.Activity is null ? null : update;
+
+            if (player.Activity == stored)
+                return;
+
+            _players[connection.AccountId] = player with { Activity = stored };
+            Broadcast(CreateActivityPacket(update));
+        }
+    }
+
+    private static byte[] CreateActivityPacket(PlayerActivityPacket activity)
+    {
+        return GamePacket.Create(PacketType.PlayerActivity, MessagePackSerializer.Serialize(activity));
     }
 
     public void DisconnectSession(Guid sessionId)

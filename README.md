@@ -11,6 +11,7 @@ Resonance is a work-in-progress private server implementation for [Rhythia](http
 - [x] Authentication (login, logout, registration and persistent sessions)
 - [x] Account privileges and badges
 - [x] Online-player list and join/leave notifications
+- [x] Player activity (idle, playing, etc.)
 - [ ] Beatmap collections, search, details, and downloads
 - [ ] Skin browsing and downloads
 - [x] Player profiles (basic profile reads)

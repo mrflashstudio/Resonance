@@ -12,5 +12,6 @@ public enum PacketType : byte
     ChannelLeft = 8,
     ChatMessage = 9,
     Ping = 10,
+    PlayerActivity = 11,
     Pong = 12
 }

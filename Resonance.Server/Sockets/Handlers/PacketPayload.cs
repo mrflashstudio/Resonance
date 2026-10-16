@@ -2,7 +2,7 @@ using MessagePack;
 
 namespace Resonance.Server.Sockets.Handlers;
 
-internal static class ChatPayload
+internal static class PacketPayload
 {
     private static readonly MessagePackSerializerOptions Options =
         MessagePackSerializerOptions.Standard.WithSecurity(MessagePackSecurity.UntrustedData);
@@ -16,10 +16,13 @@ internal static class ChatPayload
         {
             var framing = new MessagePackReader(payload);
             framing.Skip();
+            
             if (!framing.End)
                 return null;
+            
             var reader = new MessagePackReader(payload);
             var result = MessagePackSerializer.Deserialize<T>(ref reader, Options);
+            
             return reader.End ? result : null;
         }
         catch (MessagePackSerializationException)
