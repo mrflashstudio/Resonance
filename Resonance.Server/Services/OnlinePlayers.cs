@@ -1,5 +1,6 @@
 using MessagePack;
 using Resonance.Core.Models;
+using Resonance.Core.Services;
 using Resonance.Server.Extensions;
 using Resonance.Server.Sockets;
 using Resonance.Server.Sockets.Models;
@@ -7,7 +8,7 @@ using Resonance.Server.Sockets.Protocol;
 
 namespace Resonance.Server.Services;
 
-public sealed class OnlinePlayers(TimeProvider clock, ChatChannels chat) : IOnlinePlayers
+public sealed class OnlinePlayers(TimeProvider clock, ChatChannels chat, IProfileAssets assets) : IOnlinePlayers
 {
     private sealed record Player(Account Account, GameConnection Connection, PlayerActivityPacket? Activity = null);
 
@@ -34,6 +35,7 @@ public sealed class OnlinePlayers(TimeProvider clock, ChatChannels chat) : IOnli
     private OnlinePlayer CreateDetails(Account account)
     {
         return new OnlinePlayer(account.Id, account.Name,
+            ProfilePictureUrl: assets.GetUrl(account, AssetKind.Avatar),
             Ban: account.Status.ToProtocolString(account.StatusExpiresAt, clock.GetUtcNow()),
             Position: account.Rank, SkillPoints: account.RhythmPoints, PlayCount: account.PlayCount,
             Flag: account.CountryCode, IsBot: account.IsBot);

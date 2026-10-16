@@ -5,7 +5,7 @@ using Resonance.Server.Sockets.Protocol;
 
 namespace Resonance.Server.Sockets.Handlers;
 
-public sealed class ProfileHandler(IProfileService profiles, TimeProvider clock) : IPacketHandler
+public sealed class ProfileHandler(IProfileService profiles, TimeProvider clock, IProfileAssets assets) : IPacketHandler
 {
     public PacketType Type => PacketType.Profile;
 
@@ -19,7 +19,7 @@ public sealed class ProfileHandler(IProfileService profiles, TimeProvider clock)
             return;
         }
 
-        var profile = account.ToProfile(clock.GetUtcNow());
+        var profile = account.ToProfile(clock.GetUtcNow(), assets);
 
         connection.Send(GamePacket.Create(Type, MessagePackSerializer.Serialize(profile)));
     }

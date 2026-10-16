@@ -14,7 +14,7 @@ Resonance is a work-in-progress private server implementation for [Rhythia](http
 - [x] Player activity (idle, playing, etc.)
 - [ ] Beatmap collections, search, details, and downloads
 - [ ] Skin browsing and downloads
-- [x] Player profiles (basic profile reads)
+- [x] Player profiles (basic profile reads, avatars and banners)
 - [ ] Score submission
 - [ ] Leaderboards, player statistics, and RP calculation
 - [ ] Replay downloads
@@ -80,18 +80,19 @@ For a local installation, export Caddy's local CA certificate, trust it, and add
     127.0.0.1 production.resonance.local
     127.0.0.1 socket.resonance.local
     127.0.0.1 socketdev.resonance.local
+    127.0.0.1 static.resonance.local
     ```
     (use your `RESONANCE_DOMAIN` if you changed it)
 
 ## Additional setup (production installation)
 
 1. Set `RESONANCE_DOMAIN` to a public domain you control, without a scheme or port.
-2. Create DNS `A` records pointing the domain and its `www`, `production`, `socket`, and `socketdev` subdomains to your server's public IPv4 address. Add `AAAA` records only if the server is also reachable over IPv6.
+2. Create DNS `A` records pointing the domain and its `www`, `production`, `socket`, `socketdev`, and `static` subdomains to your server's public IPv4 address. Add `AAAA` records only if the server is also reachable over IPv6.
 3. Allow inbound TCP ports **80** and **443** through the firewall. UDP port **443** is optional for HTTP/3.
 
 Caddy obtains and renews public TLS certificates automatically. You do not need to export or manually trust a certificate in production.
 
-Both configurations apply database migrations before starting Resonance and keep database and certificate data in Docker volumes. Back up the database before upgrading.
+Both configurations apply database migrations before starting Resonance and keep database, custom images, and certificate data in Docker volumes. Back up the database and custom images before upgrading.
 
 ## Account registration
 
@@ -118,6 +119,18 @@ With superuser access or Developer privileges, use `/giveprivilege` to grant pri
 Available privileges are `Developer`, `Moderator`, `TeamAssistant`, `TeamRanked`, and `Supporter`. Use `/takeprivilege` to remove them. Superuser access remains independent of these privileges.
 
 Use `/help` for other available commands and `/help <command>` for usage and examples.
+
+## Avatars and banners
+
+Default PNG images are in `Resonance/Assets/defaults/avatars` and `banners`, named `user.png` and `bot.png`. Replace them before building to use your own defaults.
+
+For custom images, copy `<userId>.png` into `/data/assets/avatars` or `/data/assets/banners` in the application container:
+
+```sh
+docker compose -f docker-compose.dev.yml cp ./avatar.png resonance:/data/assets/avatars/42.png
+```
+
+Use `docker-compose.yml` for production. Custom images override defaults and persist in a Docker volume.
 
 ## Connecting
 

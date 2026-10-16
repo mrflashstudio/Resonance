@@ -20,7 +20,8 @@ public sealed class ProfileModule : ICarterModule
     }
 
     private static async Task<Results<Ok<ProfileResponse>, BadRequest<ProfileResponse>, NotFound<ProfileResponse>>> GetAsync(
-        HttpRequest request, IProfileService profiles, TimeProvider clock, IValidator<ProfileRequest> validator, CancellationToken cancellationToken)
+        HttpRequest request, IProfileService profiles, TimeProvider clock, IProfileAssets assets,
+        IValidator<ProfileRequest> validator, CancellationToken cancellationToken)
     {
         var profileRequest = await GameRequestReader.ReadAsync<ProfileRequest>(request, cancellationToken);
 
@@ -31,7 +32,7 @@ public sealed class ProfileModule : ICarterModule
 
         return profile is null
             ? TypedResults.NotFound(new ProfileResponse("User not found."))
-            : TypedResults.Ok(new ProfileResponse(User: profile.ToProfile(clock.GetUtcNow())));
+            : TypedResults.Ok(new ProfileResponse(User: profile.ToProfile(clock.GetUtcNow(), assets)));
     }
 
     private static async Task<Results<Ok<UserScoresResponse>, BadRequest<UserScoresResponse>, NotFound<UserScoresResponse>>> GetScoresAsync(

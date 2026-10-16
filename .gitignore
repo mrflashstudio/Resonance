@@ -5,6 +5,7 @@ obj/
 *.user
 *.suo
 *.rsuser
+Resonance/data/
 
 .env
 .env.*

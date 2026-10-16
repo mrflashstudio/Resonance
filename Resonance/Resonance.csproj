@@ -15,4 +15,9 @@
         <ProjectReference Include="../Resonance.Server/Resonance.Server.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+        <None Update="Assets/defaults/**/*.png"
+              CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    </ItemGroup>
+
 </Project>
