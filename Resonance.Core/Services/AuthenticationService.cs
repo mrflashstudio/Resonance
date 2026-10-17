@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Resonance.Core.Authentication;
 using Resonance.Core.Configuration;
-using Resonance.Core.Extensions;
 using Resonance.Core.Models;
 using Resonance.Core.Repositories;
 
@@ -113,7 +112,7 @@ public sealed class AuthenticationService(
         if (account is null || account.IsBot || result == PasswordVerificationResult.Failed)
             return LoginResult.Failure("Invalid login or password.");
 
-        if (account.Status.GetEffectiveStatus(account.StatusExpiresAt, clock.GetUtcNow()) == UserStatus.Excluded)
+        if (account.Ban == UserBan.Excluded)
             return LoginResult.Failure("This account is excluded.");
 
         var passwordHash = result == PasswordVerificationResult.SuccessRehashNeeded
@@ -132,7 +131,7 @@ public sealed class AuthenticationService(
             if (current is null || current.IsBot)
                 return LoginResult.Failure("Invalid login or password.");
 
-            if (current.Status.GetEffectiveStatus(current.StatusExpiresAt, clock.GetUtcNow()) == UserStatus.Excluded)
+            if (current.Ban == UserBan.Excluded)
                 return LoginResult.Failure("This account is excluded.");
 
             var now = clock.GetUtcNow();

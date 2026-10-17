@@ -33,6 +33,8 @@ public sealed class User
     public int SquaresHit { get; set; }
     public long TotalScore { get; set; }
 
-    public UserStatus Status { get; set; }
-    public DateTimeOffset? StatusExpiresAt { get; set; }
+    public UserBan Ban { get; set; }
+    public DateTimeOffset? BannedAt { get; set; }
+    public DateTimeOffset? SilencedAt { get; set; }
+    public DateTimeOffset? SilenceExpiresAt { get; set; }
 }

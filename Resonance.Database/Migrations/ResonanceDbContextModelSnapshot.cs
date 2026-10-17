@@ -79,6 +79,12 @@ namespace Resonance.Database.Migrations
                     b.Property<long>("Badges")
                         .HasColumnType("bigint");
 
+                    b.Property<int>("Ban")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("BannedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("CountryCode")
                         .HasMaxLength(2)
                         .HasColumnType("character varying(2)");
@@ -112,14 +118,14 @@ namespace Resonance.Database.Migrations
                     b.Property<double>("RhythmPoints")
                         .HasColumnType("double precision");
 
+                    b.Property<DateTimeOffset?>("SilenceExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("SilencedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<int>("SquaresHit")
                         .HasColumnType("integer");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTimeOffset?>("StatusExpiresAt")
-                        .HasColumnType("timestamp with time zone");
 
                     b.Property<long>("TotalScore")
                         .HasColumnType("bigint");

@@ -21,8 +21,10 @@ internal static class UserMapping
         PlayCount = user.PlayCount,
         SquaresHit = user.SquaresHit,
         TotalScore = user.TotalScore,
-        Status = user.Status,
-        StatusExpiresAt = user.StatusExpiresAt
+        Ban = user.Ban,
+        BannedAt = user.BannedAt,
+        SilencedAt = user.SilencedAt,
+        SilenceExpiresAt = user.SilenceExpiresAt
     };
 
     private static readonly Func<User, Account> MapAccount = AccountProjection.Compile();

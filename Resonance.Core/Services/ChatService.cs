@@ -24,7 +24,7 @@ public sealed class ChatService(IProfileService profiles, TimeProvider clock)
             return null;
 
         var sender = await profiles.GetAsync(senderId, cancellationToken);
-        if (sender is null || sender.Status.GetEffectiveStatus(sender.StatusExpiresAt, clock.GetUtcNow()) != UserStatus.Active)
+        if (sender is null || !sender.CanChat(clock.GetUtcNow()))
             return null;
 
         return new ChatMessage(sender, recipientId, channel?.Trim(), text)

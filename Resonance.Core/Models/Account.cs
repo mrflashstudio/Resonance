@@ -16,6 +16,8 @@ public sealed record Account(int Id, string Name)
     public int PlayCount { get; init; }
     public int SquaresHit { get; init; }
     public long TotalScore { get; init; }
-    public UserStatus Status { get; init; }
-    public DateTimeOffset? StatusExpiresAt { get; init; }
+    public UserBan Ban { get; init; }
+    public DateTimeOffset? BannedAt { get; init; }
+    public DateTimeOffset? SilencedAt { get; init; }
+    public DateTimeOffset? SilenceExpiresAt { get; init; }
 }

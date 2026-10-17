@@ -20,14 +20,13 @@ public sealed class SessionRepository(IDbContextFactory<ResonanceDbContext> data
     private static IQueryable<Session> ActiveSessions(ResonanceDbContext db, DateTimeOffset now)
     {
         return db.Sessions.AsNoTracking().Where(session => !session.User.IsBot && session.RevokedAt == null && session.ExpiresAt > now &&
-            (session.User.Status != UserStatus.Excluded || session.User.StatusExpiresAt <= now));
+            session.User.Ban != UserBan.Excluded);
     }
 
     private static IQueryable<Session> InvalidSessions(ResonanceDbContext db, DateTimeOffset now)
     {
         return db.Sessions.Where(session => session.User.IsBot || session.RevokedAt != null || session.ExpiresAt <= now ||
-            (session.User.Status == UserStatus.Excluded &&
-                (session.User.StatusExpiresAt == null || session.User.StatusExpiresAt > now)));
+            session.User.Ban == UserBan.Excluded);
     }
 
     private static async Task<StoredSession?> ReadAsync(IQueryable<Session> query, CancellationToken cancellationToken)

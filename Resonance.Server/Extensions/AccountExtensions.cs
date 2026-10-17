@@ -27,7 +27,7 @@ public static class AccountExtensions
             TotalScore = account.TotalScore,
             IsOnline = account.IsOnline,
             Verified = false,
-            Ban = account.Status.ToProtocolString(account.StatusExpiresAt, now),
+            Ban = account.ToProtocolStatus(now),
             Badges = account.GetBadgeNames()
         };
     }

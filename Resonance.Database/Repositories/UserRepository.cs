@@ -128,7 +128,7 @@ public sealed class UserRepository(IDbContextFactory<ResonanceDbContext> databas
                 return false;
 
             var user = await db.Users.SingleOrDefaultAsync(user => user.Id == userId, cancellationToken);
-            if (user is null || user.IsBot || user.Status.GetEffectiveStatus(user.StatusExpiresAt, now) != UserStatus.Active)
+            if (user is null || user.IsBot || !UserMapping.ToAccount(user).CanChat(now))
                 return false;
 
             user.IsSuperuser = true;

@@ -48,7 +48,7 @@ public sealed class ServerBotService(IUserRepository users, TimeProvider clock, 
     public async Task<BotReply?> ReplyAsync(ChatMessage message, CancellationToken cancellationToken)
     {
         if (Account is null || !CanHandle(message) ||
-            message.Sender.IsBot || message.Sender.Status.GetEffectiveStatus(message.Sender.StatusExpiresAt, clock.GetUtcNow()) != UserStatus.Active)
+            message.Sender.IsBot || !message.Sender.CanChat(clock.GetUtcNow()))
             return null;
 
         var reply = await commands.DispatchAsync(new CommandContext(message.Sender, message.Channel), message.Text, cancellationToken);

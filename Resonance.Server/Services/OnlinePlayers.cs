@@ -36,7 +36,7 @@ public sealed class OnlinePlayers(TimeProvider clock, ChatChannels chat, IProfil
     {
         return new OnlinePlayer(account.Id, account.Name,
             ProfilePictureUrl: assets.GetUrl(account, AssetKind.Avatar),
-            Ban: account.Status.ToProtocolString(account.StatusExpiresAt, clock.GetUtcNow()),
+            Ban: account.ToProtocolStatus(clock.GetUtcNow()),
             Position: account.Rank, SkillPoints: account.RhythmPoints, PlayCount: account.PlayCount,
             Flag: account.CountryCode, IsBot: account.IsBot);
     }
