@@ -42,6 +42,24 @@ public sealed class UserRepository(IDbContextFactory<ResonanceDbContext> databas
             cancellationToken) != 0;
     }
 
+    public async Task<Account?> ChangeSilenceAsync(int id, DateTimeOffset? silencedAt, DateTimeOffset? expiresAt, string? reason,
+        CancellationToken cancellationToken)
+    {
+        await using var db = await database.CreateDbContextAsync(cancellationToken);
+
+        var changed = await db.Users.Where(user => user.Id == id && !user.IsBot && !user.IsSuperuser)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(user => user.SilencedAt, silencedAt)
+                .SetProperty(user => user.SilenceExpiresAt, silencedAt == null ? null : expiresAt)
+                .SetProperty(user => user.SilenceReason, silencedAt == null ? null : reason), cancellationToken);
+
+        if (changed == 0)
+            return null;
+
+        return await db.Users.AsNoTracking().Where(user => user.Id == id)
+            .Select(UserMapping.AccountProjection).SingleOrDefaultAsync(cancellationToken);
+    }
+
     public async Task<UserCredentials?> FindByUsernameAsync(string username, CancellationToken cancellationToken)
     {
         await using var db = await database.CreateDbContextAsync(cancellationToken);

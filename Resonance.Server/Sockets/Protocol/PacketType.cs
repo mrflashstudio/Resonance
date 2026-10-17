@@ -13,5 +13,7 @@ public enum PacketType : byte
     ChatMessage = 9,
     Ping = 10,
     PlayerActivity = 11,
-    Pong = 12
+    Pong = 12,
+    UserSilence = 13,
+    UserModerationChanged = 14
 }

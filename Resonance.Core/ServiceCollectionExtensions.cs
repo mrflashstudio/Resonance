@@ -19,6 +19,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IAuthenticationService, AuthenticationService>();
         services.AddSingleton<IProfileService, ProfileService>();
         services.AddSingleton<ChatService>();
+        services.AddSingleton<ModerationService>();
         services.AddSingleton<BotCommandDispatcher>();
         services.AddSingleton<ServerBotService>();
         services.AddOptions<ServerBotSettings>()

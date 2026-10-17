@@ -82,6 +82,10 @@ namespace Resonance.Database.Migrations
                     b.Property<int>("Ban")
                         .HasColumnType("integer");
 
+                    b.Property<string>("BanReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
                     b.Property<DateTimeOffset?>("BannedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -120,6 +124,10 @@ namespace Resonance.Database.Migrations
 
                     b.Property<DateTimeOffset?>("SilenceExpiresAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("SilenceReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
 
                     b.Property<DateTimeOffset?>("SilencedAt")
                         .HasColumnType("timestamp with time zone");

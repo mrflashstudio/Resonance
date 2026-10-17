@@ -19,7 +19,7 @@ Resonance is a work-in-progress private server implementation for [Rhythia](http
 - [ ] Leaderboards, player statistics, and RP calculation
 - [ ] Replay downloads
 - [ ] Friends
-- [x] Chat (channels, direct messages and commands)
+- [x] Chat (channels, direct messages, commands and silences)
 - [ ] Clans
 - [ ] Spectating
 - [ ] Multiplayer lobbies and matches

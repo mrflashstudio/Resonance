@@ -35,6 +35,13 @@ public sealed class User
 
     public UserBan Ban { get; set; }
     public DateTimeOffset? BannedAt { get; set; }
+
+    [MaxLength(1000)]
+    public string? BanReason { get; set; }
+
     public DateTimeOffset? SilencedAt { get; set; }
     public DateTimeOffset? SilenceExpiresAt { get; set; }
+
+    [MaxLength(1000)]
+    public string? SilenceReason { get; set; }
 }

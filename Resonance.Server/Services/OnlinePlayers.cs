@@ -1,4 +1,5 @@
 using MessagePack;
+using Resonance.Core.Extensions;
 using Resonance.Core.Models;
 using Resonance.Core.Services;
 using Resonance.Server.Extensions;
@@ -185,6 +186,39 @@ public sealed class OnlinePlayers(TimeProvider clock, ChatChannels chat, IProfil
 
             _players[connection.AccountId] = player with { Activity = stored };
             Broadcast(CreateActivityPacket(update));
+        }
+    }
+
+    public void UpdateModeration(Account account)
+    {
+        lock (_sync)
+        {
+            if (_players.TryGetValue(account.Id, out var player))
+            {
+                _players[account.Id] = player with
+                {
+                    Account = player.Account with
+                    {
+                        Ban = account.Ban,
+                        BannedAt = account.BannedAt,
+                        SilencedAt = account.SilencedAt,
+                        SilenceExpiresAt = account.SilenceExpiresAt
+                    }
+                };
+            }
+
+            var now = clock.GetUtcNow();
+            var update = new UserModerationChangedPacket
+            {
+                UserId = account.Id,
+                IsLimited = account.Ban != UserBan.None || account.IsSilenced(now),
+                Status = account.ToProtocolStatus(now),
+                ExpiresAt = account.Ban == UserBan.None && account.IsSilenced(now)
+                    ? account.SilenceExpiresAt?.ToUnixTimeMilliseconds()
+                    : null
+            };
+
+            Broadcast(GamePacket.Create(PacketType.UserModerationChanged, MessagePackSerializer.Serialize(update)));
         }
     }
 

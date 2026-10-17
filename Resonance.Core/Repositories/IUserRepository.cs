@@ -11,6 +11,8 @@ public interface IUserRepository
     Task<Account?> GetByUsernameAsync(string username, CancellationToken cancellationToken);
     Task<bool> ChangePrivilegesAsync(int id, UserPrivileges privileges, bool grant, CancellationToken cancellationToken);
     Task<bool> ChangeBadgesAsync(int id, UserBadges badges, bool grant, CancellationToken cancellationToken);
+    Task<Account?> ChangeSilenceAsync(int id, DateTimeOffset? silencedAt, DateTimeOffset? expiresAt, string? reason,
+        CancellationToken cancellationToken);
     Task<UserCredentials?> FindByUsernameAsync(string username, CancellationToken cancellationToken);
     Task<RegistrationResult?> CreateAsync(string username, string passwordHash, DateTimeOffset createdAt,
         CancellationToken cancellationToken);
