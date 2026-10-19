@@ -15,4 +15,8 @@ public sealed record OnlinePlayer(
     [property: Key(8)] bool IsBot = false,
     [property: Key(9)] int? ClanId = null,
     [property: Key(10)] string? ClanName = null,
-    [property: Key(11)] string? ClanAcronym = null);
+    [property: Key(11)] string? ClanAcronym = null,
+    [property: Key(12)] bool? Verified = null,
+    [property: Key(13)] string[]? Badges = null,
+    [property: Key(14)] string? BannerItemId = null,
+    [property: Key(15)] string? ClanImageUrl = null);

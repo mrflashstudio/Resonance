@@ -72,4 +72,6 @@ public sealed record Profile
     [Key(18)]
     public int? Clan { get; init; }
 
+    [Key(19)]
+    public string[]? Achievements { get; init; }
 }

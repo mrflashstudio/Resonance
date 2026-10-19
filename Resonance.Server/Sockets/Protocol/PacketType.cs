@@ -33,5 +33,6 @@ public enum PacketType : byte
     MultiplayerLobbies = 29,
     MultiplayerLobbyAdded = 30,
     MultiplayerLobbyRemoved = 31,
-    MultiplayerLobbyUpdated = 32
+    MultiplayerLobbyUpdated = 32,
+    Achievements = 33
 }

@@ -39,7 +39,8 @@ public sealed class OnlinePlayers(TimeProvider clock, ChatChannels chat, IProfil
             ProfilePictureUrl: assets.GetUrl(account, AssetKind.Avatar),
             Ban: account.ToProtocolStatus(clock.GetUtcNow()),
             Position: account.Rank, SkillPoints: account.RhythmPoints, PlayCount: account.PlayCount,
-            Flag: account.CountryCode, IsBot: account.IsBot);
+            Flag: account.CountryCode, IsBot: account.IsBot,
+            Verified: false, Badges: account.GetBadgeNames());
     }
 
     private void Broadcast(PacketType type, OnlinePlayer player, GameConnection? excluded = null)

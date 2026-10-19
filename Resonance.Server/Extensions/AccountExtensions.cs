@@ -28,7 +28,8 @@ public static class AccountExtensions
             IsOnline = account.IsOnline,
             Verified = false,
             Ban = account.ToProtocolStatus(now),
-            Badges = account.GetBadgeNames()
+            Badges = account.GetBadgeNames(),
+            Achievements = []
         };
     }
 }
